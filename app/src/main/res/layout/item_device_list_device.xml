@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C), 2019. by [clock - Individual developer] ,All rights reserved.
+  ~ The article is original, writing is also the strength to live, reference please indicate the source and author.
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/item_ble_root"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:clickable="true"
+    >
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginLeft="2dp"
+        android:src="@drawable/bledevice"
+        android:layout_centerVertical="true"
+        />
+
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@+id/icon"
+        android:layout_marginLeft="2dp"
+        android:layout_centerVertical="true"
+        android:text="name-001"
+        android:textColor="@android:color/black"
+        />
+
+    <Button
+        android:id="@+id/btn_send"
+        android:layout_width="65dp"
+        android:layout_height="40dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:text="发数据"
+        android:textSize="13sp"
+        android:textColor="@android:color/black"
+        />
+    <Button
+        android:id="@+id/btn_conn"
+        android:layout_width="55dp"
+        android:layout_height="40dp"
+        android:layout_toLeftOf="@id/btn_send"
+        android:layout_centerVertical="true"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:text="断开"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        />
+    <Button
+        android:id="@+id/btn_delete"
+        android:layout_width="55dp"
+        android:layout_height="40dp"
+        android:layout_toLeftOf="@id/btn_conn"
+        android:layout_centerVertical="true"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:text="删除"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/black"
+        android:layout_alignParentBottom="true"
+        />
+</RelativeLayout>

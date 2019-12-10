@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DualBle</string>
+
+    <string name="please_open_blue">Please turn on bluetooth first</string>
+    <string name="max_num">Device connect max number 7!</string>
+
+</resources>
