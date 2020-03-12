@@ -23,11 +23,11 @@ public final class BLEAllDispatcher extends Thread {
     }
     private BLEAllDispatcher() {}
 
-    void addAllPackageData(List<byte[]> data, int bleId) {
+    void addAllPackageData(List<byte[]> data, int deviceId) {
         synchronized (packageQueue) {
             for (byte[] item: data) {
 //                d("addAllPackageData : " + BytesUtil.BytesToHexStringPrintf(item));
-                BLEPacket packet = new BLEPacket(item, bleId);
+                BLEPacket packet = new BLEPacket(item, deviceId);
                 packageQueue.add(packet);
             }
         }

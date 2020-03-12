@@ -18,7 +18,7 @@ public interface CmdInterface {
 	 * @param len 命令内容部分的长度
 	 * @return
 	 */
-	public int parseNotifyCmd(byte[] data, int index, int len, int bleId);
+	public int parseNotifyCmd(byte[] data, int index, int len, int deviceId);
 	public int parseTransmitCmd(byte[] data, int index, int len);
 	public int parseConfigCmd(byte[] data, int index, int len);
 	public boolean packDataForSend();

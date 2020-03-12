@@ -9,8 +9,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
 
-import com.clock.bluetoothlib.logic.network.DeviceAuthorizeListener;
-import com.clock.bluetoothlib.logic.network.DeviceInfoSyncListener;
 import com.clock.bluetoothlib.logic.network.data.BLEAllDispatcher;
 import com.clock.bluetoothlib.logic.network.data.BLEPacket;
 
@@ -70,8 +68,9 @@ public abstract class BLEBaseManager implements BLEServerListener {
 
     /**
      * 自定义了多种设备，把这些设备的deviceTypeId、serviceUUID，添加对这个map；
-     * 框架连接上设备后，根据serviceUUID，分辨是哪种类型的设备，然后通过onCreateDevice(BluetoothDevice bluetoothDevice, int deviceTypeId)，回调给用户，
+     * 框架扫描到设备后，解析广播数据得到serviceUUID，分辨是哪种类型的设备，然后通过onCreateDevice(BluetoothDevice bluetoothDevice, int deviceTypeId)，回调给用户，
      * 用户在接口里，根据deviceTypeId new一个设备返回给框架
+     * 如果广播不携带uuid，该框架忽略此设备
      * @return 非 null
      */
     protected abstract HashMap<Integer, UUID> onGetDevicesServiceUUID();
@@ -83,13 +82,14 @@ public abstract class BLEBaseManager implements BLEServerListener {
     public synchronized void initBle(Context context) {
         if(!isBleInit) {
             isBleInit = true;
-            mBLEScanner = new BLEScanner(context,onGetDevicesServiceUUID(),isScanFilter,this);
+            mBLEScanner = BLEScanner.getInstance();
+            mBLEScanner.init(context,onGetDevicesServiceUUID(),isScanFilter,this);
 
             mBLEServerCentral = BLEServerCentral.getInstance();
             mBLEServerCentral.init(context, this);
 
             mBLEConnector = BLEConnector.getInstance();
-            mBLEConnector.init(context, onGetDevicesServiceUUID(), this);
+            mBLEConnector.init(context, this);
 
             BLEAllDispatcher.getInstance().mBLEServerListener = this;
         }
@@ -122,10 +122,10 @@ public abstract class BLEBaseManager implements BLEServerListener {
      * 连接扫描到的某个蓝牙设备
      * @param bluetoothDevice
      */
-    public void connScannedBleDevice(final BluetoothDevice bluetoothDevice) {
+    public int connScannedBleDevice(final BluetoothDevice bluetoothDevice) {
         abortScanTimer();
         stopScanDevice(); // 正常添加连接 连接前，断开扫描，这样快一点
-        mBLEConnector.connToScannedBleDevice(bluetoothDevice);
+        return mBLEConnector.connToScannedBleDevice(bluetoothDevice);
     }
 
     /**
@@ -235,35 +235,35 @@ public abstract class BLEBaseManager implements BLEServerListener {
 
     /**
      * 手动连接断开的设备
-     * @param id
+     * @param deviceId
      * @return
      */
-    public int manualConnDevice(final Integer id) {
+    public int manualConnDevice(final Integer deviceId) {
         if (isConnVirtualDevice) {
-            Log.w(TAG, "想手动重连设备，但是正在连虚拟设备，请等待 " + " " + id);
+            Log.w(TAG, "想手动重连设备，但是正在连虚拟设备，请等待 " + " " + deviceId);
             return -30;
         }
-        return mBLEServerCentral.manualConnBle(id);
+        return mBLEServerCentral.manualConnBle(deviceId);
     }
 
     /**
      * 删除蓝牙设备
-     * @param id
+     * @param deviceId
      */
-    public void removeDevice(Integer id) {
-        mBLEServerCentral.removeBle(id);
+    public void removeDevice(Integer deviceId) {
+        mBLEServerCentral.removeBle(deviceId);
     }
 
     /**
      * 断开蓝牙设备的连接
-     * @param id
+     * @param deviceId
      */
-    public int forceDisConnDevice(final Integer id) {
+    public int forceDisConnDevice(final Integer deviceId) {
         if (isConnVirtualDevice) {
-            Log.w(TAG, "想手动重连设备，但是正在连虚拟设备，请等待 " + " " + id);
+            Log.w(TAG, "想手动重连设备，但是正在连虚拟设备，请等待 " + " " + deviceId);
             return -30;
         }
-        return mBLEServerCentral.forceDisConnBle(id);
+        return mBLEServerCentral.forceDisConnBle(deviceId);
     }
 
     public boolean hasDeviceConnecting() {
@@ -277,14 +277,14 @@ public abstract class BLEBaseManager implements BLEServerListener {
     /**
      * 发送蓝牙透传数据
      * @param data 数据
-     * @param bleId 蓝牙设备mDeviceId
+     * @param deviceId 蓝牙设备mDeviceId
      */
-    public void sendBLETransmitData(final byte[] data, final int bleId) {
-        mBLEServerCentral.sendTransmitData(data, bleId);
+    public void sendBLETransmitData(final byte[] data, final int deviceId) {
+        mBLEServerCentral.sendTransmitData(data, deviceId);
     }
 
-//    public void sendBLEConfigData(final byte[] data, final int bleId) {
-//        mBLEServerCentral.sendConfigData(data, bleId);
+//    public void sendBLEConfigData(final byte[] data, final int bleDeviceId) {
+//        mBLEServerCentral.sendConfigData(data, bleDeviceId);
 //    }
 
     @Override
@@ -323,8 +323,6 @@ public abstract class BLEBaseManager implements BLEServerListener {
     public void onScanConnVirtualDevice(int type) {
 
     }
-    @Override
-    public abstract void onConnectUnTypeDevice(BluetoothDevice bluetoothDevice, int type);
 
     @Override
     public abstract BLEAppDevice onCreateDevice(BluetoothDevice bluetoothDevice, int deviceType);
@@ -334,14 +332,6 @@ public abstract class BLEBaseManager implements BLEServerListener {
     @Override
     public void onCharacterMatch(BluetoothDevice device, int type) {
 
-    }
-    @Override
-    public void onAuthorizeDevice(BLEAppDevice device, DeviceAuthorizeListener listener) {
-        listener.onAuthorize(true);
-    }
-    @Override
-    public void onDoNecessaryBiz(BLEAppDevice device, DeviceInfoSyncListener listener) {
-        listener.onInfoSync(1);
     }
     @Override
     public void onAddPreDevice(BluetoothDevice device){}

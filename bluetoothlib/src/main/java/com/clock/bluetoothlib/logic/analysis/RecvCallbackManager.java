@@ -52,15 +52,15 @@ class RecvCallbackManager {
         handler.sendMessage(message);
     }
 
-    void parseRecvPackageData(byte[] data, int bleId) {
+    void parseRecvPackageData(byte[] data, int deviceId) {
 
-        byte[] src = Decode.get().parseRecvData(data, bleId);
+        byte[] src = Decode.get().parseRecvData(data, deviceId);
         if (src == null) {
             return;
         }
 
         int token = src[Decode.get().getDecodeAdapter().getIndexCmd()] & 0xFF;
-        token = token + (bleId<<8);
+        token = token + (deviceId<<8);
 		Log.w(TAG, "token 1 : " + token /*String.format("%02x", token)*/);
         sendMessage(token, src);
     }
@@ -115,28 +115,28 @@ class RecvCallbackManager {
      * 没有超时检测
      *
      */
-    void sendConfigCommand(OnRespDataListener l, byte[] values, int cmdId, int bleId) {
+    void sendConfigCommand(OnRespDataListener l, byte[] values, int cmdId, int deviceId) {
 
-//        BLEManager.getInstance().sendBLEConfigData(values, bleId);
-        callBack.onSendData(values, bleId);
+//        BLEManager.getInstance().sendBLEConfigData(values, bleDeviceId);
+        callBack.onSendData(values, deviceId);
     }
 
-    void sendWriteCommand(OnRespDataListener l, byte[] values, int cmdId, int bleId) {
+    void sendWriteCommand(OnRespDataListener l, byte[] values, int cmdId, int deviceId) {
 
-        sendDataLogic(l, values, cmdId, bleId);
+        sendDataLogic(l, values, cmdId, deviceId);
     }
 
-    private void sendDataLogic(OnRespDataListener l, byte[] values, int cmdId, int bleId) {
+    private void sendDataLogic(OnRespDataListener l, byte[] values, int cmdId, int deviceId) {
 
         Log.w(TAG, "token 0 : " + cmdId /*String.format("%02x", cmdId)*/);
         addToWaitRespCache(cmdId, l); // 添加响应回调到缓存，等待回调
 
-        sendBytesDate(values, bleId);              // 发送数据
+        sendBytesDate(values, deviceId);              // 发送数据
 
         setReqTimeout(cmdId);          // 超时处理
     }
 
-    private void sendBytesDate(final byte[] data, int bleId) {
+    private void sendBytesDate(final byte[] data, int deviceId) {
         //一条包字节大于20个，要手动分包
         if(data==null){
             return;
@@ -150,8 +150,8 @@ class RecvCallbackManager {
                 for (int j = 0; j < 20; j++) {
                     sendByte[j] = sendBytes[20 * i + j];
                 }
-//                BLEManager.getInstance().sendBLETransmitData(sendByte, bleId);
-                callBack.onSendData(sendByte, bleId);
+//                BLEManager.getInstance().sendBLETransmitData(sendByte, bleDeviceId);
+                callBack.onSendData(sendByte, deviceId);
                 try {
                     Thread.sleep(5);
                 } catch (InterruptedException e) {
@@ -163,12 +163,12 @@ class RecvCallbackManager {
                 for (int i = 0; i < sendBytes.length % 20; i++) {
                     sendByte[i] = sendBytes[sendBytes.length - sendBytes.length % 20 + i];
                 }
-//                BLEManager.getInstance().sendBLETransmitData(sendByte, bleId);
-                callBack.onSendData(sendByte, bleId);
+//                BLEManager.getInstance().sendBLETransmitData(sendByte, bleDeviceId);
+                callBack.onSendData(sendByte, deviceId);
             }
         } else {
-//            BLEManager.getInstance().sendBLETransmitData(data, bleId);
-            callBack.onSendData(data, bleId);
+//            BLEManager.getInstance().sendBLETransmitData(data, bleDeviceId);
+            callBack.onSendData(data, deviceId);
         }
     }
 }

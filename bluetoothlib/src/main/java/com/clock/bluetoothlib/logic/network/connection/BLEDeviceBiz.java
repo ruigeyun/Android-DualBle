@@ -102,7 +102,7 @@ final class BLEDeviceBiz {
      */
     void doCharacterEnableAction() {
         mOwnerDevice.mBLEConnState = BLEState.Connect.Enable;
-        mOwnerDevice.mBLEServerListener.onAuthorizeDevice((BLEAppDevice) mOwnerDevice, new DeviceAuthorizeListener() {
+        mOwnerDevice.onAuthorizeDevice((BLEAppDevice) mOwnerDevice, new DeviceAuthorizeListener() {
             @Override
             public void onAuthorize(boolean isAuthorize) {
                 if (isAuthorize) {
@@ -129,7 +129,7 @@ final class BLEDeviceBiz {
         }
 
         // 完成APP与设备的信息同步，设备才处于正常业务交流，可用状态
-        mOwnerDevice.mBLEServerListener.onDoNecessaryBiz((BLEAppDevice) mOwnerDevice, new DeviceInfoSyncListener() {
+        mOwnerDevice.onDoNecessaryBiz((BLEAppDevice) mOwnerDevice, new DeviceInfoSyncListener() {
             @Override
             public void onInfoSync(int type) {
                 if (mOwnerDevice == null) {

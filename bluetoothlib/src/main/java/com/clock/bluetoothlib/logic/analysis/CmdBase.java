@@ -47,7 +47,7 @@ public class CmdBase implements CmdInterface {
 	}
 	
 	@Override
-	public int parseNotifyCmd(byte[] data, int index, int len, int bleId) {
+	public int parseNotifyCmd(byte[] data, int index, int len, int deviceId) {
 		// TODO Auto-generated method stub
 		if(data == null) {
 			return ConstantTransfer.CODE_DATA_NULL;

@@ -31,11 +31,11 @@ public final class DataCircularBuffer {
     private BLEAllDispatcher mDataDispatchCenter = null;
     private byte[] onePackage;
 
-    private int bleId;
+    private int deviceId;
     private DataParserAdapter adapter;
 
     public DataCircularBuffer(int cap, int id, DataParserAdapter adapter) {
-        bleId = id;
+        deviceId = id;
         mDataDispatchCenter = BLEAllDispatcher.getInstance();
         this.adapter = adapter;
         if (this.adapter == null) {
@@ -340,7 +340,7 @@ public final class DataCircularBuffer {
             return -1;
         }
 
-        mDataDispatchCenter.addAllPackageData(packageQueue, bleId);
+        mDataDispatchCenter.addAllPackageData(packageQueue, deviceId);
         return ret;
     }
 
@@ -356,7 +356,7 @@ public final class DataCircularBuffer {
         //        prevTime = currTime;
         // 没有配置数据拼包适配器，则把原始数据分发出去
         if (adapter == null) {
-            mDataDispatchCenter.dispatchOriginalPackage(originalData, bleId);
+            mDataDispatchCenter.dispatchOriginalPackage(originalData, deviceId);
         }
         else {
             // 此框架数据包拼包解析算法，数据包格式见：DataParserAdapter

@@ -42,7 +42,7 @@ class Decode {
 		return false;
 	}
 
-	byte[] parseRecvData(byte[] data, int bleId) {
+	byte[] parseRecvData(byte[] data, int deviceId) {
 		// 0、字符个数太少
 //		if(data.length < ProtocolVh.MIN_LENGHT) {
 //			Log.w(TAG, "数据长度不够，错误数据");
@@ -51,13 +51,13 @@ class Decode {
 		int cmd = data[decodeAdapter.getIndexCmd()] & 0xFF;
 //		Log.i(TAG, "Cmd: " + String.format("%02x", cmd));
 
-		if(parseNotifyCmd(data, cmd, 0, bleId) == -1) { // 不属于通知指令，继续往下解析
+		if(parseNotifyCmd(data, cmd, 0, deviceId) == -1) { // 不属于通知指令，继续往下解析
 			return data;
 		}
 		return null;
 	}
-	
-	private int parseNotifyCmd(byte[] data, int currCmd, int index, int bleId) {
+
+	private int parseNotifyCmd(byte[] data, int currCmd, int index, int deviceId) {
 
 		String className = NotifyCmdLib.get().getClassString(currCmd);
 		if(className == null) {
@@ -66,6 +66,7 @@ class Decode {
 		}
 		Log.i(TAG, "通知指令 className: " + className);
 
+		// 命令模式调用者，这里没有定义接收者，接收者为各个界面，在命令实现类中，通过eventbus推过去了，实现更高级的解耦
 		CmdInterface desCmd = NotifyCmdLib.get().getObjectFromLib(currCmd);
 		if(desCmd == null) {
 			try {
@@ -80,7 +81,7 @@ class Decode {
 
 		int len = getContentLen(data, index);
         index = 0 + decodeAdapter.getDistMarkToContent() + 1;
-		desCmd.parseNotifyCmd(data, index, len, bleId);
+		desCmd.parseNotifyCmd(data, index, len, deviceId);
 
 		return index + len;
 	}

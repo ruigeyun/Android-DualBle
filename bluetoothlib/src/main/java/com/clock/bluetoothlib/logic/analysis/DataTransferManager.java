@@ -20,18 +20,18 @@ public abstract class DataTransferManager {
         NotifyCmdLib.get().setAdapter(adapter2);
     }
 
-    public void sendConfigCommand(OnRespDataListener l, byte[] values, int cmdId, int bleId) {
+    public void sendConfigCommand(OnRespDataListener l, byte[] values, int cmdId, int deviceId) {
 
-        RecvCallbackManager.get().sendConfigCommand(l, values, cmdId, bleId);
+        RecvCallbackManager.get().sendConfigCommand(l, values, cmdId, deviceId);
     }
 
-    public void sendWriteCommand(OnRespDataListener l, byte[] values, int cmdId, int bleId) {
+    public void sendWriteCommand(OnRespDataListener l, byte[] values, int cmdId, int deviceId) {
 
-        RecvCallbackManager.get().sendWriteCommand(l, values, cmdId, bleId);
+        RecvCallbackManager.get().sendWriteCommand(l, values, cmdId, deviceId);
     }
 
-    public void DecodeRespData(byte[] data, int bleId) {
-        RecvCallbackManager.get().parseRecvPackageData(data, bleId);
+    public void DecodeRespData(byte[] data, int deviceId) {
+        RecvCallbackManager.get().parseRecvPackageData(data, deviceId);
     }
 
     public int parseTransmitData(byte[] data, CmdBase cmd) {

@@ -12,13 +12,13 @@ public final class BLEPacket {
      */
     public byte[] bleData;
     /**
-     * ble id
+     * ble id 标志不同的蓝牙设备，也就是设备的mDeviceId
      */
-    public int bleId;
+    public int bleDeviceId;
 
     public BLEPacket(byte[] data, int id) {
         bleData = data;
-        bleId = id;
+        bleDeviceId = id;
     }
 
     @Override
@@ -32,7 +32,7 @@ public final class BLEPacket {
                 sb.append(i == 0 ? "" : ", ").append(bleData[i]);
             sb.append(']');
         }
-        sb.append(", bleAddr='").append(bleId).append('\'');
+        sb.append(", bleAddr='").append(bleDeviceId).append('\'');
         sb.append('}');
         return sb.toString();
     }

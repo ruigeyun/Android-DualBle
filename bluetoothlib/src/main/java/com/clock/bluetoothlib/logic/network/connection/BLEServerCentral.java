@@ -73,81 +73,81 @@ final class BLEServerCentral {
     }
 
 
-    int manualConnBle(Integer key) {
-        Log.w(TAG,"想手动重连设备 ble key: " + key);
-        BLELogicDevice device = deviceConnectedMap.get(key);
+    int manualConnBle(Integer deviceId) {
+        Log.w(TAG,"想手动重连设备 ble deviceId: " + deviceId);
+        BLELogicDevice device = deviceConnectedMap.get(deviceId);
         if (device == null) {
-            Log.w(TAG, "想手动重连设备，但是不存在这个设备 " + " " + key);
+            Log.w(TAG, "想手动重连设备，但是不存在这个设备 " + " " + deviceId);
             return -10;
         }
 
         int connectingDevice = BLEConnector.getInstance().getConnectingDeviceNum();
         if (connectingDevice > 0) {
-            Log.w(TAG, "想手动重连设备，但是有其他设备在连，只能退出等待： " + connectingDevice + " " + key);
+            Log.w(TAG, "想手动重连设备，但是有其他设备在连，只能退出等待： " + connectingDevice + " " + deviceId);
             return -1;
         }
         int disConnDevice = getDisConnDeviceNum();
         if (disConnDevice >0) {
-            Log.w(TAG, "想手动重连设备，但是有其他设备 还没释放完，只能退出等待: " + disConnDevice + " " + key);
+            Log.w(TAG, "想手动重连设备，但是有其他设备 还没释放完，只能退出等待: " + disConnDevice + " " + deviceId);
             return -3;
         }
 
         if (device.mDeviceState != DeviceState.Normal) {
-            Log.w(TAG, "想手动重连设备，设备资源还没释放完，只能退出等待: " + " " + key);
+            Log.w(TAG, "想手动重连设备，设备资源还没释放完，只能退出等待: " + " " + deviceId);
             return -20;
         }
 
         return device.manualConnBle();
     }
 
-    int forceDisConnBle(Integer key) {
-        Log.w(TAG,"想手动断开设备 ble key: " + key);
-        BLELogicDevice device = deviceConnectedMap.get(key);
+    int forceDisConnBle(Integer deviceId) {
+        Log.w(TAG,"想手动断开设备 ble deviceId: " + deviceId);
+        BLELogicDevice device = deviceConnectedMap.get(deviceId);
         if (device == null) {
-            Log.w(TAG, "想手动断开设备，但是不存在这个设备 " + " " + key);
+            Log.w(TAG, "想手动断开设备，但是不存在这个设备 " + " " + deviceId);
             return -10;
         }
 
         int connectingDevice = BLEConnector.getInstance().getConnectingDeviceNum();
         if (connectingDevice > 0) {
-            Log.w(TAG, "想手动断开设备，但是有其他设备在连，只能退出等待： " + connectingDevice + " " + key);
+            Log.w(TAG, "想手动断开设备，但是有其他设备在连，只能退出等待： " + connectingDevice + " " + deviceId);
             return -1;
         }
         int disConnDevice = getDisConnDeviceNum();
         if (disConnDevice >0) {
-            Log.w(TAG, "想手动断开设备，但是有其他设备 还没释放完，只能退出等待: " + disConnDevice + " " + key);
+            Log.w(TAG, "想手动断开设备，但是有其他设备 还没释放完，只能退出等待: " + disConnDevice + " " + deviceId);
             return -3;
         }
 
         if (device.mBLEConnState != BLEState.Connect.ForceDisconnect) {
-            Log.d(TAG, "强制断开此设备，加入断开列表：" + key);
+            Log.d(TAG, "强制断开此设备，加入断开列表：" + deviceId);
             device.mBLEConnState = BLEState.Connect.BeToDisconnect;
             addDisConnDevice(device);
             return 0;
         }
         else {
-            Log.d(TAG, "此设备处于断开状态，不必再断开"+ " " + key);
+            Log.d(TAG, "此设备处于断开状态，不必再断开"+ " " + deviceId);
             return -20;
         }
     }
 
-    void removeBle(Integer key) {
-        Log.w(TAG,"remove ble key: " + key);
-        BLELogicDevice device = deviceConnectedMap.get(key);
+    void removeBle(Integer deviceId) {
+        Log.w(TAG,"remove ble deviceId: " + deviceId);
+        BLELogicDevice device = deviceConnectedMap.get(deviceId);
         if (device == null) {
             Log.e(TAG, "removeBl no this device");
             return;
         }
 
         device.removeSelf();
-        deviceConnectedMap.remove(key);
-        BLEConnector.getInstance().removeConnectingDevice(key);
+        deviceConnectedMap.remove(deviceId);
+        BLEConnector.getInstance().removeConnectingDevice(deviceId);
         System.gc();
     }
 
-//    void sendConfigData(byte[] data, int bleId) {
-//        Log.e(TAG, bleId + " sendConfigData: " + BleLibByteUtil.BytesToHexStringPrintf(data));
-//        BLELogicDevice d = deviceConnectedMap.get(bleId);
+//    void sendConfigData(byte[] data, int bleDeviceId) {
+//        Log.e(TAG, bleDeviceId + " sendConfigData: " + BleLibByteUtil.BytesToHexStringPrintf(data));
+//        BLELogicDevice d = deviceConnectedMap.get(bleDeviceId);
 //        if(d==null /*|| d.mBLEConnState != BLEState.Active*/) {
 //            Log.w(TAG, "sendConfigData null or not Active: ");
 //            return;
@@ -155,34 +155,34 @@ final class BLEServerCentral {
 //        d.writeConfigData(data);
 //    }
 
-    void sendTransmitData(byte[] data, int bleId) {
-        Log.e(TAG, bleId + " sendTransmitData: " + BleLibByteUtil.BytesToHexStringPrintf(data));
-        BLELogicDevice d = deviceConnectedMap.get(bleId);
+    void sendTransmitData(byte[] data, int deviceId) {
+        Log.e(TAG, deviceId + " sendTransmitData: " + BleLibByteUtil.BytesToHexStringPrintf(data));
+        BLELogicDevice d = deviceConnectedMap.get(deviceId);
         if(d==null) {
             Log.w(TAG, "sendTransmitData null ");
-            mBLEServerListener.onDeviceSendResult("找不到设备 " + bleId);
+            mBLEServerListener.onDeviceSendResult("找不到设备 " + deviceId);
             return;
         }
         if( d.mBLEConnState.index < BLEState.Connect.Enable.index) {
             Log.w(TAG, "sendTransmitData not Active: ");
-            mBLEServerListener.onDeviceSendResult("蓝牙连接失败 " + bleId);
+            mBLEServerListener.onDeviceSendResult("蓝牙连接失败 " + deviceId);
             return;
         }
         d.writeTransmitData(data);
     }
 
-//    private void addConnectingDevice(Integer bleID) {
+//    private void addConnectingDevice(Integer deviceId) {
 //        synchronized (bleConnectingList) {
-//            if (!bleConnectingList.contains(bleID)) {
-//                bleConnectingList.add(bleID);
-//                Log.w(TAG, "addConnectingDevic: " + bleID);
+//            if (!bleConnectingList.contains(deviceId)) {
+//                bleConnectingList.add(deviceId);
+//                Log.w(TAG, "addConnectingDevic: " + deviceId);
 //            }
 //        }
 //    }
-//    private void removeConnectingDevice(Integer bleID) {
+//    private void removeConnectingDevice(Integer deviceId) {
 //        synchronized (bleConnectingList) {
-//            bleConnectingList.remove(bleID);
-//            Log.w(TAG, "removeConnectingDevic: " + bleID);
+//            bleConnectingList.remove(deviceId);
+//            Log.w(TAG, "removeConnectingDevic: " + deviceId);
 //        }
 //    }
 //    int getConnectingDeviceNum() {
@@ -191,16 +191,16 @@ final class BLEServerCentral {
 //        }
 //    }
 
-    private void addDisConnDevice(BLELogicDevice bleID) {
+    private void addDisConnDevice(BLELogicDevice device) {
         synchronized (beToDisConnBleList) {
-            if (!beToDisConnBleList.contains(bleID)) {
-                beToDisConnBleList.add(bleID);
+            if (!beToDisConnBleList.contains(device)) {
+                beToDisConnBleList.add(device);
             }
         }
     }
-    private void removeDisConnDevice(BLELogicDevice bleID) {
+    private void removeDisConnDevice(BLELogicDevice device) {
         synchronized (beToDisConnBleList) {
-            beToDisConnBleList.remove(bleID);
+            beToDisConnBleList.remove(device);
         }
     }
 
@@ -216,9 +216,9 @@ final class BLEServerCentral {
      */
     interface DeviceStatusListener {
         void onRemove(BLELogicDevice device);
-        void onConnected(BLELogicDevice device, Integer bleID);
-        void onConnecting(BLELogicDevice device, Integer bleID);
-        void onConnectFail(BLELogicDevice device, Integer bleID);
+        void onConnected(BLELogicDevice device, Integer deviceId);
+        void onConnecting(BLELogicDevice device, Integer deviceId);
+        void onConnectFail(BLELogicDevice device, Integer deviceId);
     }
 
     DeviceStatusListener mDeviceStatusListener = new DeviceStatusListener() {
@@ -227,27 +227,27 @@ final class BLEServerCentral {
             removeBle(device.mDeviceId);
         }
         @Override
-        public void onConnected(BLELogicDevice device, Integer bleID) {
-            BLEConnector.getInstance().removeConnectingDevice(bleID);
+        public void onConnected(BLELogicDevice device, Integer deviceId) {
+            BLEConnector.getInstance().removeConnectingDevice(deviceId);
             Log.w(TAG, "connectingBleCn ed : " + BLEConnector.getInstance().getConnectingDeviceNum());
         }
         @Override
-        public void onConnecting(BLELogicDevice device, Integer bleID) {
+        public void onConnecting(BLELogicDevice device, Integer deviceId) {
             if (!deviceConnectedMap.containsValue(device)) {
-                // 设备连接成功，添加到集合
-                deviceConnectedMap.put(bleID, device);
-                Log.w(TAG, "连接设备集合增加一成员 : " + bleID);
+                // 设备连接，添加到集合
+                deviceConnectedMap.put(deviceId, device);
+                Log.w(TAG, "连接设备集合增加一成员 : " + deviceId);
             }
             else {
-                Log.w(TAG, "设备集合已经存在它，不再反复添加 : " + bleID);
+                Log.w(TAG, "设备集合已经存在它，不再反复添加 : " + deviceId);
             }
-            BLEConnector.getInstance().addConnectingDevice(bleID);
-            Log.w(TAG, "connectingBleCn ing : " + BLEConnector.getInstance().getConnectingDeviceNum() + " " + bleID);
+            BLEConnector.getInstance().addConnectingDevice(deviceId);
+            Log.w(TAG, "connectingBleCn ing : " + BLEConnector.getInstance().getConnectingDeviceNum() + " " + deviceId);
         }
         @Override
-        public void onConnectFail(BLELogicDevice device, Integer bleID) {
+        public void onConnectFail(BLELogicDevice device, Integer deviceId) {
             Log.w(TAG, "connect fail : " + BLEConnector.getInstance().getConnectingDeviceNum());
-            BLEConnector.getInstance().removeConnectingDevice(bleID);
+            BLEConnector.getInstance().removeConnectingDevice(deviceId);
         }
     };
 

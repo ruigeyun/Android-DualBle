@@ -14,10 +14,15 @@ import java.util.UUID;
 
 public class HeaterDevice extends BLEAppDevice {
     private final String TAG = "BLELedDevice";
+    /**
+     * 此DEVICE_TYPE_ID 不能和别的设备定义的值一样
+     */
     public static final Integer DEVICE_TYPE_ID = 1001;
     public static final UUID SERVICE_UUID = UUID.fromString("0000FFF0-0000-1000-8000-00805f9b34fb");
     private final UUID RX_CHAR_UUID = UUID.fromString("0000FFF1-0000-1000-8000-00805f9b34fb");
     private final UUID TX_CHAR_UUID = UUID.fromString("0000FFF2-0000-1000-8000-00805f9b34fb");
+
+//    public static final UUID UUID_SETTING = UUID.fromString("0000ffa0-0000-1000-8000-00805f9b34fb");//配置模块参数
 
     public int powerState = 1;
     public String name = "";
@@ -37,10 +42,6 @@ public class HeaterDevice extends BLEAppDevice {
     @Override
     public UUID getTxUUID() {
         return TX_CHAR_UUID;
-    }
-
-    public HeaterDevice() {
-        isVirtualDevice = true;
     }
 
     public HeaterDevice(BluetoothDevice device, DataParserAdapter adapter) {

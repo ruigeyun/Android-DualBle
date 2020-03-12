@@ -7,6 +7,6 @@ package com.clock.bluetoothlib.logic.analysis;
 
 public interface OnDataSendCallBack {
 
-    public void onSendData(byte[] values, int bleId);
+    public void onSendData(byte[] values, int deviceId);
 
 }

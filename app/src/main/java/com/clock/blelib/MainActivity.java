@@ -31,7 +31,6 @@ import com.clock.blelib.event.AddPreConnDeviceEvent;
 import com.clock.blelib.event.AddScanDeviceEvent;
 import com.clock.blelib.event.BleSendResultEvent;
 import com.clock.blelib.event.ConnectDeviceEvent;
-import com.clock.blelib.event.ConnectUnTypeDeviceEvent;
 import com.clock.blelib.event.updateDeviceInfoEvent;
 import com.clock.blelib.widget.ScanListPopWindow;
 import com.clock.bluetoothlib.logic.network.connection.BLEAppDevice;
@@ -338,15 +337,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
             }
 
-            showProgressBase(false);
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(ConnectUnTypeDeviceEvent event) {
-        Log.d(TAG, "onMessageEvent ConnectUnTypeDeviceEven: ");
-        if (event.type < 0) { // 连接失败 0
-            Log.w(TAG, "连接失败 0 ConnectUnTypeDeviceEven: ");
             showProgressBase(false);
         }
     }

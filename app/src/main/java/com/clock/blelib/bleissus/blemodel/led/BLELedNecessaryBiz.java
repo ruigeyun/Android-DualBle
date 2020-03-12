@@ -22,36 +22,7 @@ public class BLELedNecessaryBiz {
         this.listener = listener;
     }
 
-    public void doConfiguredAction() {
-        getDeviceInfo();
-    }
-
-//    private void sendPwdToBleDevice() {
-//        Log.d(TAG, "密码验证: "  + " " + mOwnerDevice.mDeviceId);
-//        Cmd71Pwd cmd = new Cmd71Pwd();
-//
-//        DataSendTransferBle.writeBleDevice(cmd, mOwnerDevice.mDeviceId, new OnRespResultListener() {
-//            @Override
-//            public void onSuccess(int code) {
-//                Log.i("test", "--led 蓝牙-密码验证成功--=");
-////                mOwnerDevice.updateConnectState(BLEState.Active);
-//                reSendCnt = 0;
-//                getDeviceInfo();
-//            }
-//
-//            @Override
-//            public void onFailure(int code) {
-//                Log.i("test", "--led 蓝牙-密码验证失败--=");
-////                getDeviceInfo();
-//                if(reSendCnt < 10) {
-//                    sendPwdToBleDevice();
-//                    reSendCnt++;
-//                }
-//            }
-//        });
-//    }
-
-    private void getDeviceInfo() {
+    public void getDeviceInfo() {
         Log.d(TAG, "getDeviceInfo: "  + " " + mOwnerDevice.mDeviceId);
 //        final Cmd73Version cmd = new Cmd73Version();
 //        DataSendTransferBle.writeBleDevice(cmd, mOwnerDevice.mDeviceId, new OnRespResultListener() {
@@ -75,6 +46,8 @@ public class BLELedNecessaryBiz {
 //                }
 //            }
 //        });
+        // 同步结束后，调用
+        listener.onInfoSync(1); // 数据同步完成后，回调1
     }
 
     private void syncPhoneDateToDevice() {
@@ -91,7 +64,7 @@ public class BLELedNecessaryBiz {
 //        DataSendTransferBle.writeBleDevice(cmd, mOwnerDevice.mDeviceId, new OnRespResultListener() {
 //            @Override
 //            public void onSuccess(int code) {
-//                listener.onInfoSync(1);
+//                listener.onInfoSync(1); // 数据同步完成后，回调1
 //                reSendCnt = 0;
 //            }
 //

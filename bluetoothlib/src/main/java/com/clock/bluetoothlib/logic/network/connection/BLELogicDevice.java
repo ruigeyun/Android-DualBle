@@ -9,6 +9,9 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
@@ -20,6 +23,7 @@ import com.clock.bluetoothlib.logic.network.data.DataParserAdapter;
 import com.clock.bluetoothlib.logic.utils.LogUtil;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -31,7 +35,7 @@ abstract class BLELogicDevice extends BLEBaseDevice {
     private final String TAG = "BLELedDevice";
 
     BluetoothDevice mBluetoothDevice;
-    BluetoothGattCallback mGattCallback;
+//    BluetoothGattCallback mGattCallback;
 //    BluetoothGattCharacteristic settingGattCharacteristic;
     BluetoothGattCharacteristic rxGattCharacteristic;//
     BluetoothGattCharacteristic txGattCharacteristic;//
@@ -69,8 +73,20 @@ abstract class BLELogicDevice extends BLEBaseDevice {
         this.mDeviceStatusListener = Listener2;
     }
 
+    /**
+     * 蓝牙设备的service uuid ，具体类必须实现，返回设备的service uuid
+     * @return
+     */
     public abstract UUID getServiceUUID();
+    /**
+     * 蓝牙设备的接收uuid ，具体类必须实现，返回设备的接收uuid
+     * @return
+     */
     public abstract UUID getRxUUID();
+    /**
+     * 蓝牙设备的写入uuid ，具体类必须实现，返回设备的写入uuid
+     * @return
+     */
     public abstract UUID getTxUUID();
 
     @Override
@@ -87,31 +103,37 @@ abstract class BLELogicDevice extends BLEBaseDevice {
         }
         mBLEConnState = BLEState.Connect.Connecting;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mBluetoothGatt = mBluetoothDevice.connectGatt(mContext,
-                    false, mGattCallback, TRANSPORT_LE);
-        } else {
-            mBluetoothGatt = mBluetoothDevice.connectGatt(mContext,
-                    false, mGattCallback);
-        }
-        if (mBluetoothGatt == null) {
-            LogUtil.e(TAG, "connectGatt 失败", (BLEAppDevice) this);
-            mDeviceStatusListener.onConnectFail(BLELogicDevice.this, mDeviceId);
-
-        } else {
-            if(connectTimer != null) {
-                LogUtil.w(TAG, "222 启动新的连接，老的连接定时器 cancel", (BLEAppDevice) this);
-                connectTimer.cancel();
-            }
-            connectTimer = new Timer();
-            connectTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    LogUtil.e(TAG, ConnectTimeOut + " 秒后，还没连接上，自动断开，连接失败2222 !", (BLEAppDevice) BLELogicDevice.this);
-                    connectFailAction();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    mBluetoothGatt = mBluetoothDevice.connectGatt(mContext,
+                            false, mGattCallback, TRANSPORT_LE);
+                } else {
+                    mBluetoothGatt = mBluetoothDevice.connectGatt(mContext,
+                            false, mGattCallback);
                 }
-            }, ConnectTimeOut);
-        }
+                if (mBluetoothGatt == null) {
+                    LogUtil.e(TAG, "connectGatt 失败", (BLEAppDevice)BLELogicDevice.this);
+                    mDeviceStatusListener.onConnectFail(BLELogicDevice.this, mDeviceId);
+
+                } else {
+                    if(connectTimer != null) {
+                        LogUtil.w(TAG, "222 启动新的连接，老的连接定时器 cancel", (BLEAppDevice)BLELogicDevice.this);
+                        connectTimer.cancel();
+                    }
+                    connectTimer = new Timer();
+                    connectTimer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            LogUtil.e(TAG, ConnectTimeOut + " 秒后，还没连接上，自动断开，连接失败2222 !", (BLEAppDevice) BLELogicDevice.this);
+                            connectFailAction();
+                        }
+                    }, ConnectTimeOut);
+                }
+            }
+        });
+
     }
     @Override
     synchronized int manualConnBle() {
@@ -276,6 +298,175 @@ abstract class BLELogicDevice extends BLEBaseDevice {
         mBLEServerListener.onConnectDevice((BLEAppDevice) BLELogicDevice.this, 0);
     }
 
+    private BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+            if (mGattCallback == null || mDeviceState == DeviceState.Remove) {
+                // 设备被删除后，还有回调
+                LogUtil.w(TAG, "设备被删除了，不再处理回调");
+                return;
+            }
+            if (mBLEConnState == BLEState.Connect.ForceDisconnect) {
+                LogUtil.w(TAG, "ble状态改变，因为设备已被强制断开，直接清空: ", (BLEAppDevice) BLELogicDevice.this);
+                closeBleRelation(gatt);
+                return;
+            }
+
+            mBluetoothGatt = gatt;
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                LogUtil.w(TAG, "设备连接上：", (BLEAppDevice) BLELogicDevice.this);
+//                LogUtil.i(TAG, "Connected to GATT server.");
+                // Attempts to discover services after successful connection.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                    requestMasterConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH, mBluetoothGatt);
+                }
+                LogUtil.d(TAG, "延时500ms后，去发现服务", (BLEAppDevice) BLELogicDevice.this);
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean ret = mBluetoothGatt.discoverServices();
+                        LogUtil.w(TAG, "发现服务ret: ", (BLEAppDevice) BLELogicDevice.this);
+                        if (ret) {
+                            mBLEConnState = BLEState.Connect.Connected;
+                            mBLELedBiz.doConnectedAction();
+                        }
+                        else {
+                            LogUtil.e(TAG, "发现服务失败", (BLEAppDevice) BLELogicDevice.this);
+                            disconnectGatt();
+                            refreshDeviceCache();
+                            closeBluetoothGatt();
+                            mBLEServerListener.onCharacterMatch(mBluetoothDevice, 0);
+                            mDeviceStatusListener.onRemove(BLELogicDevice.this);
+                        }
+                    }
+                }, 500);
+
+            }
+            else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                LogUtil.w(TAG, "Disconnected from GATT server.", (BLEAppDevice) BLELogicDevice.this);
+                if (mReconnectType == BLEState.ReconnectType.Auto) {
+                    mBLELedBiz.doDisconnectAction(); // 自动重连情况，才去做
+                }
+                else {
+                    connectFailAction();
+                }
+            }
+            if(status == BluetoothGatt.GATT_SUCCESS) {
+                LogUtil.w(TAG, "BluetoothGatt.GATT_SUCCESS.", (BLEAppDevice) BLELogicDevice.this);
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            super.onServicesDiscovered(gatt, status);
+            LogUtil.w(TAG, "发现服务回调 onServicesDiscovered status : ", (BLEAppDevice) BLELogicDevice.this);
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                LogUtil.w(TAG, "发现服务 还没成功 ", (BLEAppDevice) BLELogicDevice.this);
+                return;
+            }
+
+            mBluetoothGatt = gatt;
+            for (BluetoothGattService gattService : gatt.getServices()) {
+//                LogUtil.i(TAG, "discover: " + gattService.toString());
+                LogUtil.i(TAG, "discover 服务的uuid : " + gattService.getUuid(), (BLEAppDevice) BLELogicDevice.this);
+                if (!getServiceUUID().equals(gattService.getUuid())) {
+                    continue;
+                }
+                List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+                for (final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+
+                    LogUtil.d(TAG, "特征的UUID: " + gattCharacteristic.getUuid().toString(), (BLEAppDevice) BLELogicDevice.this);
+                    if (gattCharacteristic.getUuid().equals(getRxUUID())) {
+                        rxGattCharacteristic = gattCharacteristic;
+                        LogUtil.w(TAG, "gattCharacteristics-----rx: " + gattCharacteristic.getUuid().toString(), (BLEAppDevice) BLELogicDevice.this);
+                        // getPermissions: 0
+                        LogUtil.w(TAG, "rx getPermissions: " + gattCharacteristic.getPermissions(), (BLEAppDevice) BLELogicDevice.this);
+                        // getProperties: 18 (BluetoothGattCharacteristic.PROPERTY_NOTIFY | PROPERTY_READ)
+                        LogUtil.w(TAG, "rx getProperties: " + gattCharacteristic.getProperties(), (BLEAppDevice) BLELogicDevice.this);
+                    }
+                    else if (gattCharacteristic.getUuid().equals(getTxUUID())) {
+                        txGattCharacteristic = gattCharacteristic;
+                        LogUtil.w(TAG, "gattCharacteristics-----tx: " + gattCharacteristic.getUuid().toString(), (BLEAppDevice) BLELogicDevice.this);
+                        // getPermissions: 0
+                        LogUtil.w(TAG, "TX getPermissions: " + gattCharacteristic.getPermissions(), (BLEAppDevice) BLELogicDevice.this);
+                        // getProperties: 4 (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
+                        LogUtil.w(TAG, "TX getProperties: " + gattCharacteristic.getProperties(), (BLEAppDevice) BLELogicDevice.this);
+                    }
+                }
+            }
+
+            if ((rxGattCharacteristic != null) && (txGattCharacteristic != null)) {
+
+                mBLEServerListener.onCharacterMatch(mBluetoothDevice, 1);
+                LogUtil.d(TAG, "延时200ms后，开始设置特征", (BLEAppDevice) BLELogicDevice.this);
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (enableNotifyCharacter()) {
+                            if(connectTimer != null) {
+                                LogUtil.w(TAG, "15秒未到，连接成功 connectTimer cancel", (BLEAppDevice) BLELogicDevice.this);
+                                connectTimer.cancel();
+                            }
+                            mHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mDeviceStatusListener.onConnected(BLELogicDevice.this, mDeviceId);
+                                    mBLELedBiz.doCharacterEnableAction();
+                                }
+                            }, 200);
+                        }
+                        else {
+                            LogUtil.e(TAG, "设置 配置 特性 失败", (BLEAppDevice) BLELogicDevice.this);
+                            mBLEServerListener.onCharacterMatch(mBluetoothDevice, 0);
+                            mDeviceStatusListener.onRemove(BLELogicDevice.this);
+                        }
+                    }
+                }, 200);
+            }
+            else {
+                LogUtil.e(TAG, "发现服务中，没有对应的uuid，无法连接该设备，删除", (BLEAppDevice) BLELogicDevice.this);
+                mBLEServerListener.onCharacterMatch(mBluetoothDevice, 0);
+                mDeviceStatusListener.onRemove(BLELogicDevice.this);
+            }
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorWrite(gatt, descriptor, status);
+            LogUtil.d(TAG, "onDescriptorWrite: " + status, (BLEAppDevice) BLELogicDevice.this);
+            LogUtil.w(TAG, "onDescriptorWrite : " + BleLibByteUtil.BytesToHexStringPrintf(descriptor.getValue()));
+        }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+//            LogUtil.d(TAG, "onCharacteristicRead : " + characteristic.getUuid() + " status: " + status);
+            LogUtil.w(TAG, "onCharacteristicRead : " + BleLibByteUtil.BytesToHexStringPrintf(characteristic.getValue()));
+
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+//            LogUtil.w(TAG, "onCharacteristicChanged: " + characteristic.getUuid() + " WriteType : " + characteristic.getWriteType());
+            LogUtil.w(TAG, "onCharacteristicChanged value: " + BleLibByteUtil.BytesToHexStringPrintf(characteristic.getValue()));
+            if(characteristic == rxGattCharacteristic) {
+                mCircularBuffer.pushOriginalDataToBuffer(characteristic.getValue());
+            }
+//            else if (characteristic == settingGattCharacteristic) {
+//                mBLELedBiz.doConfigRespData(characteristic.getValue());
+//            }
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            LogUtil.v(TAG, "onCharacteristicWrite: " + characteristic.getUuid() + " status: " + status);
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                boolean ret  = mBluetoothGatt.readCharacteristic(rxGattCharacteristic);
+//                LogUtil.w(TAG, "readCharacteristic ret : " + ret);
+//            }
+
+        }
+    };
 
     @Override
     protected void finalize() throws Throwable {

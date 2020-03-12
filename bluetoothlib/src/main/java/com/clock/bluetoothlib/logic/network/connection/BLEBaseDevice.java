@@ -10,6 +10,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.util.Log;
 
+import com.clock.bluetoothlib.logic.network.DeviceAuthorizeListener;
+import com.clock.bluetoothlib.logic.network.DeviceInfoSyncListener;
+
 import java.util.UUID;
 
 abstract class BLEBaseDevice {
@@ -54,6 +57,22 @@ abstract class BLEBaseDevice {
     abstract void writeConfigData(byte[] data);
     abstract void writeTransmitData(byte[] data);
     abstract boolean enableNotifyCharacter();
+    /**
+     * APP发送密码给设备验证，验证通过才能使用此设备，如果没有这个需求，就不必重新这个方法，框架默认校验通过
+     * @param device
+     */
+    public void onAuthorizeDevice(BLEAppDevice device, DeviceAuthorizeListener listener) {
+        listener.onAuthorize(true);
+    }
+    /**
+     * 密码校验通过后，可以正式通讯，执行通讯前，都需要做的业务，比如获取蓝牙设备的状态信息，配置设备参数等.
+     * 完成这个方法，蓝牙设备才进入 active 状态，正式被使用
+     * 如果没有这个需求，就不必重新这个方法，框架默认通过
+     * @param device
+     */
+    public void onDoNecessaryBiz(BLEAppDevice device, DeviceInfoSyncListener listener) {
+        listener.onInfoSync(1);
+    }
 
     public void updateDeviceInfo(Object info) { }
 

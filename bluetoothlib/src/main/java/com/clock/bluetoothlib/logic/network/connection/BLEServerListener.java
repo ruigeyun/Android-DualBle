@@ -7,8 +7,6 @@ package com.clock.bluetoothlib.logic.network.connection;
 
 import android.bluetooth.BluetoothDevice;
 
-import com.clock.bluetoothlib.logic.network.DeviceAuthorizeListener;
-import com.clock.bluetoothlib.logic.network.DeviceInfoSyncListener;
 import com.clock.bluetoothlib.logic.network.data.BLEPacket;
 
 public interface BLEServerListener {
@@ -29,11 +27,6 @@ public interface BLEServerListener {
 
     /**
      * 连接还没确定类型的设备的回调，目前只有连失败才回调，成功：1，失败：-
-     */
-    public void onConnectUnTypeDevice(BluetoothDevice bluetoothDevice, int type);
-    /**
-     * 返回扫描连接虚拟设备的结果，目前只有连接失败才调用
-     * @param type 成功：1，失败：0
      */
     public void onScanConnVirtualDevice(int type);
 
@@ -59,21 +52,6 @@ public interface BLEServerListener {
      * @param type 成功：1，失败：0
      */
     public void onCharacterMatch(BluetoothDevice device, int type);
-
-    /**
-     * 是否允许使用此设备，发送密码验证，如果没有这个需求，就不必重新这个方法，默认校验通过
-     * @param device
-     */
-    public void onAuthorizeDevice(BLEAppDevice device, DeviceAuthorizeListener listener);
-
-    /**
-     * 密码校验通过后，可以正式通讯，执行通讯前，都需要做的业务，比如获取蓝牙设备的状态信息，配置设备参数等.
-     * 完成这个方法，蓝牙设备才进入 active 状态，正式被使用
-     * 如果没有这个需求，就不必重新这个方法，默认通过
-     * @param device
-     */
-    public void onDoNecessaryBiz(BLEAppDevice device, DeviceInfoSyncListener listener);
-
     /**
      * 准备去连接的设备，先显示出来，再连接。
      * 如果连接成功后再显示，就感觉比较慢
@@ -108,13 +86,13 @@ public interface BLEServerListener {
     /**
      * 蓝牙设备回应APP的原始数据
      * 分两种：
-     * 1：APP发送数据，ble回应数据 2：ble主动上报数据
+     * 1：APP发送，ble回应数据 2：ble主动上报数据
      * @param message
      */
     public void onDevicesRespOriginalData(BLEPacket message);
 
     /**
-     * 蓝牙设备回应APP的数据，经过框架拼包算法处理，建议用此算法
+     * 蓝牙设备回应APP的数据，经过框架拼包算法处理，解决数据丢包、断包等问题，建议用此算法
      * @param message
      */
     public void onDeviceRespSpliceData(BLEPacket message);

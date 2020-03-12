@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.clock.blelib.MainActivity;
 import com.clock.blelib.R;
 import com.clock.blelib.bleissus.blemodel.BLEManager;
+import com.clock.blelib.bleissus.blemodel.bracelet.BraceletDevice;
 import com.clock.blelib.bleissus.blemodel.heart.HeaterDevice;
 import com.clock.blelib.bleissus.blemodel.led.LedDevice;
 import com.clock.blelib.util.WidgetUitl;
@@ -85,7 +86,17 @@ public class DeviceListAdapter extends RecyclerView.Adapter<DeviceListAdapter.VH
         holder.btn_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                byte[] value = new byte[]{(byte) 0xAA, 0x0d, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//
+                byte[] value = new byte[]{(byte) 0xAA, 0x00, 0x00};
+                // 不同设备，可能数据协议不同
+                if (mDatas.get(position).mDeviceTypeId == BraceletDevice.DEVICE_TYPE_ID
+                        || mDatas.get(position).mDeviceTypeId == HeaterDevice.DEVICE_TYPE_ID) {
+
+                    value = new byte[]{(byte) 0xAA, 0x0d, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//
+                }
+                else if(mDatas.get(position).mDeviceTypeId == LedDevice.DEVICE_TYPE_ID ) {
+                    value = new byte[]{(byte) 0xAA, 0x0d, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00};//
+                }
+
                 BLEManager.getInstance().sendBLETransmitData(value, mDatas.get(position).mDeviceId);
             }
         });
